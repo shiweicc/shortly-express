@@ -81,6 +81,7 @@ app.post('/signup',
   (req, res, next) => {
     var username = req.body.username;
     var password = req.body.password;
+    if ()//user is in user table, then redirect to signup page, potentially use models/sessions.get
     return models.Users.create({username, password})
       .then( user => {
         return res.send(user);
