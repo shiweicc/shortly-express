@@ -26,6 +26,7 @@ app.get('/create',
     res.render('index');
   });
 
+
 app.get('/links',
   (req, res, next) => {
     models.Links.getAll()
@@ -77,19 +78,65 @@ app.post('/links',
 // Write your authentication routes here
 /************************************************************/
 
+app.get('/signup',
+  (req, res) => {
+    res.render('signup');
+  });
+
 app.post('/signup',
   (req, res, next) => {
     var username = req.body.username;
     var password = req.body.password;
-    if ()//user is in user table, then redirect to signup page, potentially use models/sessions.get
-    return models.Users.create({username, password})
-      .then( user => {
-        return res.send(user);
-      })
-      .catch( err => {
-        console.log('Signup failed');
+    models.Users.get({username: username})
+      .then(user => {
+        if (user) {
+          console.log('User exists!');
+          res.redirect('/signup');
+        } else {
+          return models.Users.create({username, password})
+            .then( user => {
+              res.redirect('/');
+            })
+            .catch( err => {
+              console.log('Signup failed');
+            });
+        }
       });
   });
+
+app.get('/login',
+  (req, res) => {
+    res.render('login');
+  });
+
+app.post('/login',
+  (req, res, next) => {
+    var username = req.body.username;
+    var attemptedpw = req.body.password;
+    models.Users.get({username: username})
+      .then(user => {
+        if (!user) {
+          console.log('User does not exist!');
+          res.redirect('/login');
+        } else {
+          var hashedpw = user.password; //select password, salt from users where user: username
+          var salt = user.salt;
+          var bool = models.Users.compare(attemptedpw, hashedpw, salt);
+          if (bool) {
+            console.log('Login successful');
+            res.redirect('/');
+          } else {
+            console.log('Wrong password');
+            res.redirect('/login');
+          }
+        }
+      })
+      .catch( err => {
+        console.log('Error');
+      });
+  });
+
+
 /************************************************************/
 // Handle the code parameter route last - if all other routes fail
 // assume the route is a short code and try and handle it here.
