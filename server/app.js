@@ -15,7 +15,6 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, '../public')));
 
 
-
 app.get('/',
   (req, res) => {
     res.render('index');
@@ -25,7 +24,6 @@ app.get('/create',
   (req, res) => {
     res.render('index');
   });
-
 
 app.get('/links',
   (req, res, next) => {
@@ -119,7 +117,7 @@ app.post('/login',
           console.log('User does not exist!');
           res.redirect('/login');
         } else {
-          var hashedpw = user.password; //select password, salt from users where user: username
+          var hashedpw = user.password;
           var salt = user.salt;
           var bool = models.Users.compare(attemptedpw, hashedpw, salt);
           if (bool) {
