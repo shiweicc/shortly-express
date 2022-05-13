@@ -1,23 +1,28 @@
 const models = require('../models');
 const Promise = require('bluebird');
 
+var newSession = function (req, res, next) {
+  models.Sessions.create()
+    .then(session => {
+      models.Sessions.get({id: session.insertId})
+        .then(hash => {
+          req.session = {hash: hash.hash};
+          res.cookie('shortlyid', hash.hash);
+          // req.cookies.shortlyid = hash.hash;
+          // res.send();
+          next();
+        });
+    })
+    .catch(err => {
+      console.log('Create session failed.');
+      next();
+    });
+};
+
+
 module.exports.createSession = (req, res, next) => {
-  if (Object.keys(req.cookies).length === 0) {
-    // return models.Sessions.create()
-    //   .then(session => {
-    //     models.Sessions.get({id: session.insertId})
-    //       .then(hash => {
-    //         req.session = {hash: hash.hash};
-    //         res.cookie('shortlyid', hash.hash);
-    //         res.send();
-    //         next();
-    //       });
-    //   })
-    //   .catch(err => {
-    //     console.log('Create session failed.');
-    //     next();
-    //   });
-    return                                          //new method for easy reuse
+  if (!req.cookies || Object.keys(req.cookies).length === 0) {
+    return newSession(req, res, next);
   } else {
     var hash = req.cookies.shortlyid;
     req.session = {hash: hash};
@@ -31,7 +36,7 @@ module.exports.createSession = (req, res, next) => {
       })
       .catch(err => {
         console.log('cant find ID for hash');
-                                                // use that new method because cookie is invalid and we need to make a new session/cookie
+        return newSession(req, res, next);
         next();
       });
   }
@@ -44,16 +49,3 @@ module.exports.createSession = (req, res, next) => {
 
 
 
-models.Sessions.create()
-      .then(session => {
-        models.Sessions.get({id: session.insertId})
-          .then(hash => {
-            req.session = {hash: hash.hash};
-            res.cookie('shortlyid', hash.hash);
-            res.send();
-            next();
-          });
-      })
-      .catch(err => {
-        console.log('Create session failed.');
-        next();
