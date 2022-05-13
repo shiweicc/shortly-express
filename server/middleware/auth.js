@@ -8,8 +8,6 @@ var newSession = function (req, res, next) {
         .then(hash => {
           req.session = {hash: hash.hash};
           res.cookie('shortlyid', hash.hash);
-          // req.cookies.shortlyid = hash.hash;
-          // res.send();
           next();
         });
     })
@@ -46,6 +44,10 @@ module.exports.createSession = (req, res, next) => {
 /************************************************************/
 // Add additional authentication middleware functions below
 /************************************************************/
+module.exports.updateSession = function (session) {
+  return models.Sessions.isLoggedIn(session);
+};
 
 
 
+// models.Sessions.update()

@@ -2,9 +2,9 @@ const express = require('express');
 const path = require('path');
 const utils = require('./lib/hashUtils');
 const partials = require('express-partials');
-const Auth = require('./middleware/auth');
 const models = require('./models');
 const parseCookies = require('./middleware/cookieParser');
+const Auth = require('./middleware/auth');
 
 const app = express();
 
@@ -14,11 +14,12 @@ app.use(partials());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, '../public')));
+app.use(parseCookies);
+app.use(Auth.createSession);
 
 
 app.get('/',
   (req, res) => {
-    Auth.createSession(req, res);
     res.render('index');
   });
 
@@ -95,7 +96,12 @@ app.post('/signup',
         } else {
           return models.Users.create({username, password})
             .then( user => {
-              res.redirect('/');
+              var id = user.insertId;
+              var hash = req.session.hash;
+              models.Sessions.update({hash: hash}, {userId: id})
+                .then(ok => {
+                  res.redirect('/');
+                });
             })
             .catch( err => {
               console.log('Signup failed');
@@ -133,6 +139,18 @@ app.post('/login',
       })
       .catch( err => {
         console.log('Error');
+      });
+  });
+
+app.get('/logout',
+  (req, res, next) => {
+    var hash = req.session.hash;
+    models.Sessions.delete({hash: hash})
+      .then(ok => {
+        next();
+      })
+      .catch(err => {
+        console.log('Cannot delete session');
       });
   });
 
