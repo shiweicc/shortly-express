@@ -17,26 +17,54 @@ app.use(express.static(path.join(__dirname, '../public')));
 app.use(parseCookies);
 app.use(Auth.createSession);
 
+// var verifySession = (req, res, func) => {
+//   if (Auth.updateSession(req.session)) {
+//     func();
+//   } else {
+//     var hash = req.session.hash;
+//     console.log(hash);
+//     models.Sessions.delete({hash: hash});
+//     res.redirect('/login');
+//   }
+// };
 
 app.get('/',
   (req, res) => {
-    res.render('index');
+    if (Auth.updateSession(req.session)) {
+      res.render('index');
+    } else {
+      var hash = req.session.hash;
+      models.Sessions.delete({hash: hash});
+      res.redirect('/login');
+    }
   });
 
 app.get('/create',
   (req, res) => {
-    res.render('index');
+    if (Auth.updateSession(req.session)) {
+      res.render('index');
+    } else {
+      var hash = req.session.hash;
+      models.Sessions.delete({hash: hash});
+      res.redirect('/login');
+    }
   });
 
 app.get('/links',
   (req, res, next) => {
-    models.Links.getAll()
-      .then(links => {
-        res.status(200).send(links);
-      })
-      .error(error => {
-        res.status(500).send(error);
-      });
+    if (Auth.updateSession(req.session)) {
+      models.Links.getAll()
+        .then(links => {
+          res.status(200).send(links);
+        })
+        .error(error => {
+          res.status(500).send(error);
+        });
+    } else {
+      var hash = req.session.hash;
+      models.Sessions.delete({hash: hash});
+      res.redirect('/login');
+    }
   });
 
 app.post('/links',
@@ -130,7 +158,11 @@ app.post('/login',
           var bool = models.Users.compare(attemptedpw, hashedpw, salt);
           if (bool) {
             console.log('Login successful');
-            res.redirect('/');
+            var hash = req.session.hash;
+            models.Sessions.update({hash: hash}, {userId: user.id})
+              .then(ok => {
+                res.redirect('/');
+              });
           } else {
             console.log('Wrong password');
             res.redirect('/login');
@@ -147,7 +179,7 @@ app.get('/logout',
     var hash = req.session.hash;
     models.Sessions.delete({hash: hash})
       .then(ok => {
-        next();
+        res.redirect('/login');
       })
       .catch(err => {
         console.log('Cannot delete session');
