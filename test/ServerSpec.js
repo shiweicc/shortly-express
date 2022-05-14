@@ -760,6 +760,65 @@ describe('', function() {
           done();
         });
       });
+
+
+    });
+
+
+    describe('Three meaningful Tests', function() {
+
+      it('redirects back to signup if the user already exists', function(done) {
+        var options = {
+          'method': 'POST',
+          'uri': 'http://127.0.0.1:4568/signup',
+          'json': {
+            'username': 'test',
+            'password': 'test'
+          }
+        };
+
+        request(options, function(error, res, body) {
+          if (error) { return done(error); }
+          request(options, function(err, response, resBody) {
+            if (err) { return done(err); }
+            expect(response.headers.location).to.equal('/signup');
+            done();
+          });
+        });
+      });
+
+
+      it('redirects to login if the user logs out', function(done) {
+        request('http://127.0.0.1:4568/LOGOUT', function(error, res, body) {
+          if (error) { return done(error); }
+          expect(res.req.path).to.equal('/login');
+          done();
+        });
+      });
+
+
+
+
+      it('Users that logs out and logs back in should be on main page', function(done) {
+
+        var options = {
+          'method': 'POST',
+          'uri': 'http://127.0.0.1:4568/login',
+          'json': {
+            'username': 'Vivian',
+            'password': 'Vivian'
+          }
+        };
+
+        request('http://127.0.0.1:4568/LOGOUT', function(error, res, body) {
+          if (error) { return done(error); }
+          request(options, function(error, res, body) {
+            if (error) { return done(error); }
+            expect(res.headers.location).to.equal('/');
+            done();
+          });
+        });
+      });
     });
   });
 });
